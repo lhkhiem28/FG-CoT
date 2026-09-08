@@ -20,16 +20,26 @@ class BaselineLLM(torch.nn.Module):
         self.temperature = args.temperature
         self.num_return_sequences = args.num_return_sequences
         self.accuracy_only = args.accuracy_only
-        if "Qwen2.5" in args.llm_path:
+        # "Qwen3" also matches "Qwen3.5", which shares ChatML and the same thinking switch
+        if "Qwen3" in args.llm_path:
+            # the empty think block is what apply_chat_template(..., enable_thinking=False)
+            # emits after the assistant header; prefilling it keeps generation in non-thinking mode
+            self.BOS = '<|im_start|>user\n'
+            self.EOS_USER = '<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
+            self.EOS = '<|im_end|>'
+            self.IGNORE_INDEX = -100
+        elif "Qwen" in args.llm_path:
             self.BOS = '<|im_start|>user\n'
             self.EOS_USER = '<|im_end|>\n<|im_start|>assistant\n'
             self.EOS = '<|im_end|>'
             self.IGNORE_INDEX = -100
-        if "Llama-3" in args.llm_path:
+        elif "Llama-3" in args.llm_path:
             self.BOS = '<|begin_of_text|><|start_header_id|>user<|end_header_id|>'
             self.EOS_USER = '<|eot_id|><|start_header_id|>assistant<|end_header_id|>'
             self.EOS = '<|end_of_text|>'
             self.IGNORE_INDEX = -100
+        else:
+            raise ValueError(f'No prompt markers defined for {args.llm_path}; add a branch here when adding to get_llm_path')
 
         kwargs = {
             "max_memory": {i: '80GiB' for i in range(args.n_gpus)},

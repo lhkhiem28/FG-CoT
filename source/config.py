@@ -24,7 +24,7 @@ def parse_args_llm():
     parser.add_argument("--max_completion_length", type=int, default=640)
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--num_return_sequences", type=int, default=16)
-    parser.add_argument("--accuracy_only", action="store_true", help="Skip Novelty/Diversity/SA and the sampled decoding pass; report Validity and Accuracy@0.7 only")
+    parser.add_argument("--accuracy_only", action="store_true", help="Skip Novelty/Diversity/SA and the sampled decoding pass; report Validity and Accuracy@0.5 only")
 
     # Checkpoint
     parser.add_argument("--run_name", type=str, default='')

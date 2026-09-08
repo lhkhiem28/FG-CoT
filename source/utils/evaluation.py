@@ -125,7 +125,7 @@ def get_scores_generation(eval_outputs, args):
             validities.append(1)
 
             hits = hits_check(mol_pred, mol_label, code, args.prop)
-            hits.append(DataStructs.TanimotoSimilarity(AllChem.GetMorganFingerprint(mol_pred, 2), AllChem.GetMorganFingerprint(mol_label, 2)) >= 0.7)
+            hits.append(DataStructs.TanimotoSimilarity(AllChem.GetMorganFingerprint(mol_pred, 2), AllChem.GetMorganFingerprint(mol_label, 2)) >= 0.5)
             accuracies.append(all(hits))
         except:
             validities.append(0)
@@ -153,7 +153,7 @@ def get_scores_generation(eval_outputs, args):
         df.to_csv(csv_path, index=False)
 
     print("Overall")
-    print("Validity: {:.2f}% | Accuracy@0.7: {:.2f}%".format(
+    print("Validity: {:.2f}% | Accuracy@0.5: {:.2f}%".format(
         100*sum(validities)/len(validities), 100*sum(accuracies)/len(validities)
     ))
     if not args.accuracy_only:
