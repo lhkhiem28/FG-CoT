@@ -1,0 +1,10 @@
+__pycache__/
+# output/
+*.o*
+# *.job
+# *.sh*
+wandb/
+oracle/
+
+datasets/
+!source/datasets/
