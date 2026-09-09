@@ -29,12 +29,19 @@ def main(args):
     test_dataset = load_dataset[args.dataset](path = args.path, prop = args.prop, split = "test")
     if "&" not in args.prop:
         test_dataset = [item for item in test_dataset if item["codes"] != "=0"]
-    if args.test_ratio < 1.0:
-        # sampled from args.seed only, so the subset is the same across models/checkpoints
+    # an int --test_ratio is an exact item count, a float is a fraction (1.0 = the whole split)
+    n_samples, how = None, None
+    if isinstance(args.test_ratio, int):
+        n_samples = min(args.test_ratio, len(test_dataset))
+        how = f'{args.test_ratio} requested'
+    elif args.test_ratio < 1.0:
         n_samples = max(1, round(args.test_ratio*len(test_dataset)))
+        how = f'{100*args.test_ratio:.0f}% subset'
+    if n_samples is not None:
+        # sampled from args.seed only, so the subset is the same across models/checkpoints
         indices = sorted(random.Random(seed).sample(range(len(test_dataset)), n_samples))
         test_dataset = [test_dataset[index] for index in indices]
-        print(f'Evaluating on {n_samples} test items ({100*args.test_ratio:.0f}% subset, seed {seed})')
+        print(f'Evaluating on {n_samples} test items ({how}, seed {seed})')
 
     # Step 2: Build model
     args.llm_path = get_llm_path[args.llm_name]

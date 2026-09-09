@@ -119,13 +119,15 @@ def get_scores_generation(eval_outputs, args):
 
     validities = []
     accuracies = []
+    similarities = []
     for pred, label, code in zip(df["pred"].values.tolist(), df["label"].values.tolist(), df["codes"].values.tolist()):
         try:
             mol_pred, mol_label = Chem.MolFromSmiles(pred), Chem.MolFromSmiles(label)
             validities.append(1)
 
             hits = hits_check(mol_pred, mol_label, code, args.prop)
-            hits.append(DataStructs.TanimotoSimilarity(AllChem.GetMorganFingerprint(mol_pred, 2), AllChem.GetMorganFingerprint(mol_label, 2)) >= 0.5)
+            similarities.append(DataStructs.TanimotoSimilarity(AllChem.GetMorganFingerprint(mol_pred, 2), AllChem.GetMorganFingerprint(mol_label, 2)))
+            # hits.append(similarities[-1] >= 0.5)
             accuracies.append(all(hits))
         except:
             validities.append(0)
@@ -153,10 +155,20 @@ def get_scores_generation(eval_outputs, args):
         df.to_csv(csv_path, index=False)
 
     print("Overall")
-    print("Validity: {:.2f}% | Accuracy@0.5: {:.2f}%".format(
+    print("Validity: {:.2f}% | Accuracy: {:.2f}%".format(
         100*sum(validities)/len(validities), 100*sum(accuracies)/len(validities)
     ))
     if not args.accuracy_only:
+        if similarities:
+            print("Similarity: {:.2f} (mean pairwise Tanimoto similarity over {}/{} valid predictions)".format(
+                sum(similarities)/len(similarities), len(similarities), len(validities)
+            ))
+        if sas:
+            print("SA: {:.2f} (mean over {}/{} valid predictions, lower is easier to synthesize)".format(
+                sum(sas)/len(sas), len(sas), len(validities)
+            ))
+        else:
+            print("SA: N/A (requires RDKit's Contrib/SA_Score)")
         if train_molecules:
             print("Novelty: {:.2f}% (|M| = {}, |S| = {}, |M and S| = {})".format(
                 100*(1 - len(seen_molecules)/len(train_molecules)), len(pred_molecules), len(train_molecules), len(seen_molecules)
@@ -165,16 +177,10 @@ def get_scores_generation(eval_outputs, args):
             print("Novelty: N/A (training split not found at {}/{}.json)".format(args.path, args.split))
         if diversities:
             print("Diversity: {:.2f}% (mean pairwise Tanimoto distance over {}/{} molecules with >= 2 valid generations)".format(
-                100*sum(diversities)/len(diversities), len(diversities), len(df)
+                100*sum(diversities)/len(diversities), len(diversities), len(validities)
             ))
         else:
             print("Diversity: N/A (--num_return_sequences must be > 1)")
-        if sas:
-            print("SA: {:.2f} (mean over {}/{} valid predictions, lower is easier to synthesize)".format(
-                sum(sas)/len(sas), len(sas), len(df)
-            ))
-        else:
-            print("SA: N/A (requires RDKit's Contrib/SA_Score)")
 
 eval_funcs = {
     'generation': get_scores_generation,
