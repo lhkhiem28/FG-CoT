@@ -26,7 +26,7 @@ def main(args):
     seed_everything(seed=seed)
 
     # Step 1: Build dataset
-    test_dataset = load_dataset[args.dataset](path = args.path, prop = args.prop, split = "test")
+    test_dataset = load_dataset[args.dataset](path = args.path, prop = args.prop, split = "test", icl=args.icl)
     if "&" not in args.prop:
         test_dataset = [item for item in test_dataset if item["codes"] != "=0"]
     # an int --test_ratio is an exact item count, a float is a fraction (1.0 = the whole split)
@@ -58,6 +58,8 @@ def main(args):
         batch = test_dataset[index]
         with torch.no_grad():
             output = model.inference(listize_fn(batch))
+            output["pred"] = [p.strip() if "->" not in p else p.split('->')[1].strip() for p in output["pred"]]
+            output["pred"] = [p.strip() if "becomes" not in p else p.split('becomes')[1].strip() for p in output["pred"]]
             eval_outputs.append(output)
 
         progress_bar_test.update(1)
