@@ -35,9 +35,11 @@ def parse_args_llm():
     parser.add_argument("--dataset", type=str, default='generation')
     parser.add_argument("--path", type=str, default='../FG-CoT-datasets/ChEMBL28-0.7')
     parser.add_argument("--prop", type=str)
-    parser.add_argument("--split", type=str, default="train")
+    parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--max_prompt_length", type=int, default=1024)
     parser.add_argument("--icl", action="store_true")
+    parser.add_argument("--cot", action="store_true")
+    parser.add_argument("--lite", action="store_true")
 
     # Inference
     parser.add_argument("--test_ratio", type=ratio_or_count, default=1.0, help="How much of the test split to evaluate on, sampled with --seed for reproducibility: a fraction if written with a decimal point (0.05, 1.0), an exact number of items if written as an integer (200)")

@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import tqdm
 import numpy as np
@@ -39,6 +40,25 @@ def hits_check(mol_pred, mol_label, code, prop):
     for code, prop in zip(code.split("&"), prop.split("&")):
         hits.append(prop_check(mol_pred, mol_label, code, prop))
     return hits
+
+MOLECULE_TAG = re.compile(r'<molecule>(.*?)</molecule>', re.DOTALL)
+
+def extract_molecule(text):
+    """Pull the SMILES out of the <molecule> </molecule> tags the --cot prompt asks for.
+
+    Text without an opening tag is returned unchanged, so runs without --cot are unaffected.
+    The *last* tagged block wins: a model that replays the few-shot examples before answering
+    puts its own answer last. A generation truncated by --max_completion_length before its
+    closing tag falls back to everything after the last opening tag.
+    """
+    if not isinstance(text, str):
+        return text
+    blocks = MOLECULE_TAG.findall(text)
+    if blocks:
+        return blocks[-1].strip()
+    if "<molecule>" in text:
+        return text.rsplit("<molecule>", 1)[-1].strip()
+    return text.strip()
 
 def canonicalize(smiles):
     try:
@@ -112,6 +132,15 @@ def get_sa(preds):
 
 def get_scores_generation(eval_outputs, args):
     df = pd.concat([pd.DataFrame(output) for output in eval_outputs])
+    # strip the <molecule> </molecule> tags --cot asks for before anything reaches RDKit, so the
+    # CSV and every metric below see the SMILES rather than the reasoning around it
+    df["pred"] = [extract_molecule(pred) for pred in df["pred"].values.tolist()]
+    if "generations" in df.columns:
+        # generations are "|"-joined by llm.py; extract per generation and re-join
+        df["generations"] = [
+            "|".join(extract_molecule(generation) for generation in generations.split("|"))
+            for generations in df["generations"].values.tolist()
+        ]
     os.makedirs(f'{args.output_dir}/{args.split}/{args.prop}', exist_ok=True)
     csv_path = f'{args.output_dir}/{args.split}/{args.prop}/{args.model_name}_{args.llm_name}_llm_frozen{args.llm_frozen}_{args.split}.csv'
     if csv_path is not None:

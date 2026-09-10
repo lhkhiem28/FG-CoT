@@ -1,0 +1,9 @@
+#!/bin/bash
+#$ -M kle3@nd.edu
+#$ -m be
+#$ -pe smp 16
+#$ -q gpu@@lucy
+#$ -l gpu=2
+#$ -N inference-Qwen2.5-32B
+conda activate ME-FG-CoT
+bash inference.sh 'qwen2.5-32b'

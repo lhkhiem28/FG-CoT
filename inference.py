@@ -26,7 +26,7 @@ def main(args):
     seed_everything(seed=seed)
 
     # Step 1: Build dataset
-    test_dataset = load_dataset[args.dataset](path = args.path, prop = args.prop, split = "test", icl=args.icl)
+    test_dataset = load_dataset[args.dataset](path = args.path, prop = args.prop, split = "test", icl=args.icl, cot=args.cot, lite=args.lite)
     if "&" not in args.prop:
         test_dataset = [item for item in test_dataset if item["codes"] != "=0"]
     # an int --test_ratio is an exact item count, a float is a fraction (1.0 = the whole split)
